@@ -1,11 +1,25 @@
 var Table = require("cli-table2");
 var inquirer = require("inquirer");
+var mysql = require("mysql");
+var connection = mysql.createConnection({
+  host: "localhost",
+  port: 3306,
+  user: "root",
+  password: "test",
+  database: "bamazon"
+});
+
+connection.connect(function (err) {
+  if (err) throw err;
+  menu();
+  // whatToDo();
+});
 
 function menu() {
   inquirer
     .prompt([
       {
-        type: "rawlist",
+        type: "list",
         message: "Make a selection",
         choices: [
           "View Products for Sale",
@@ -18,7 +32,7 @@ function menu() {
       }
     ])
     .then(function (response) {
-      switch (response.name) {
+      switch (response.choices) {
         case "View Products for Sale":
           inventory();
           break;
@@ -152,32 +166,37 @@ function add() {
       table.push(item);
     }
     console.log(table.toString());
-  });
-  inquire.prompt([
-    {
-      type: "input",
-      message: "Enter id of item to restock",
-      name: "item"
-    },
-    {
-      type: "input",
-      message: "Enter quantity to add",
-      name: "quantity"
-    }
-  ]).then(function (response) {
-    connection.query("UPDATE products SET ? WHERE ?",
-      [
-        {
-          stock_quantity: response.quantity
-        },
-        {
-          item_id: response.item
-        }
-      ], function (err) {
-        if (err) throw err;
-        console.log("Stock updated");
-        menu();
+    inquirer.prompt([
+      {
+        type: "input",
+        message: "Enter id of item to restock",
+        name: "item"
+      },
+      {
+        type: "input",
+        message: "Enter quantity to add",
+        name: "quantity"
+      }
+    ]).then(function (response) {
+      connection.query("SELECT stock_quantity FROM products WHERE item_id = " + response.item, function (err, res) {
+        var newStock;
+        newStock = parseInt(res[0].stock_quantity) + parseInt(response.quantity)
+        console.log(newStock);
+        connection.query("UPDATE products SET ? WHERE ?",
+          [
+            {
+              stock_quantity: newStock
+            },
+            {
+              item_id: response.item
+            }
+          ], function (err) {
+            if (err) throw err;
+            console.log("Stock updated");
+            menu();
+          });
       });
+    });
   });
 }
 
@@ -209,7 +228,7 @@ function newProduct() {
         product_name: response.name,
         department_name: response.department,
         price: response.price,
-        stock_quantity: stock
+        stock_quantity: response.stock
       }, function (err) {
         if (err) throw err;
         console.log("Item entered");
