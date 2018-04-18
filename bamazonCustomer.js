@@ -9,7 +9,7 @@ var connection = mysql.createConnection({
   database: "bamazon"
 });
 
-connection.connect(function(err) {
+connection.connect(function (err) {
   if (err) throw err;
   itemDisplay();
 });
@@ -37,7 +37,7 @@ function itemDisplay() {
     },
     colWidths: [9, 20, 16, 13, 7]
   });
-  connection.query("SELECT * FROM products", function(err, res) {
+  connection.query("SELECT * FROM products", function (err, res) {
     for (var i = 0; i < res.length; i++) {
       var item = [];
       item.push(
@@ -68,7 +68,7 @@ function nowWhat() {
         name: "quantity"
       }
     ])
-    .then(function(response) {
+    .then(function (response) {
       // console.log(response.id, response.quantity)
       quantityCheck(response.id, response.quantity);
     });
@@ -78,7 +78,7 @@ function quantityCheck(id, quantity) {
   connection.query(
     "SELECT stock_quantity FROM products WHERE item_id = ?",
     [id],
-    function(err, res) {
+    function (err, res) {
       if (quantity <= res[0].stock_quantity) {
         purchase(res[0].stock_quantity, quantity, id);
       } else {
@@ -93,17 +93,17 @@ function purchase(stock, quantity, id) {
   connection.query("UPDATE products SET ? where ?", [
     {
       stock_quantity: stock - quantity
-  },
-  {
-    item_id: id
-  }
-  ], function(err,res) {
+    },
+    {
+      item_id: id
+    }
+  ], function (err, res) {
     print(quantity, id)
   })
 }
 
 function print(quantity, id) {
-  connection.query("SELECT * FROM products WHERE item_id = ?", [id], function(err, res) {
+  connection.query("SELECT * FROM products WHERE item_id = ?", [id], function (err, res) {
     console.log("You bought " + quantity + " " + res[0].product_name + "'s for $" + res[0].price * quantity + ".")
   })
   connection.end()
