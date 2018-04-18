@@ -39,7 +39,6 @@ function itemDisplay() {
     colWidths: [9, 20, 16, 13, 7]
   });
   connection.query("SELECT * FROM products", function(err, res) {
-    // console.log(res);
     for (var i = 0; i < res.length; i++) {
       var item = [];
       item.push(
@@ -50,27 +49,63 @@ function itemDisplay() {
         res[i].stock_quantity
       );
       table.push(item);
-      console.log(table);
     }
     console.log(table.toString());
     nowWhat();
   });
-  connection.end();
 }
 
 function nowWhat() {
-  inquirer.prompt([
-    {
-      message: "Enter the item number of the item you would like to buy: ",
-      type: "input",
-      name: "number"
-    },
-    {
-      message: "How many?",
-      type: "input",
-      name: "quantity"
+  inquirer
+    .prompt([
+      {
+        message: "Enter the item number of the item you would like to buy: ",
+        type: "input",
+        name: "id"
+      },
+      {
+        message: "How many?",
+        type: "input",
+        name: "quantity"
+      }
+    ])
+    .then(function(response) {
+      // console.log(response.id, response.quantity)
+      quantityCheck(response.id, response.quantity);
+    });
+}
+
+function quantityCheck(id, quantity) {
+  connection.query(
+    "SELECT stock_quantity FROM products WHERE item_id = ?",
+    [id],
+    function(err, res) {
+      if (quantity <= res[0].stock_quantity) {
+        purchase(res[0].stock_quantity, quantity, id);
+      } else {
+        console.log("Insufficient stock!");
+        nowWhat();
+      }
     }
-  ]).then(function(response) {
-    
+  );
+}
+
+function purchase(stock, quantity, id) {
+  connection.query("UPDATE products SET ? where ?", [
+    {
+      stock_quantity: stock - quantity
+  },
+  {
+    item_id: id
+  }
+  ], function(err,res) {
+    print(quantity, id)
   })
+}
+
+function print(quantity, id) {
+  connection.query("SELECT * FROM products WHERE item_id = ?", [id], function(err, res) {
+    console.log("You bought " + quantity + " " + res[0].product_name + "'s for $" + res[0].price * quantity + ".")
+  })
+  connection.end()
 }
